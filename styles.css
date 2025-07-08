@@ -170,6 +170,32 @@ main {
     color: #555;
 }
 
+.analysis-summary {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #f0f4f8;
+    border-radius: 8px;
+    border: 1px solid #d0d8e0;
+}
+
+.analysis-summary h3 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+}
+
+.summary-content {
+    color: #555;
+    line-height: 1.8;
+}
+
+.summary-text {
+    margin-top: 10px;
+    padding: 15px;
+    background-color: white;
+    border-radius: 5px;
+    white-space: pre-line;
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 10px;

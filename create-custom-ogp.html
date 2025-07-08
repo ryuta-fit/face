@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カスタムOGP画像作成</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #f0f0f0;
+        }
+        #canvas {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            display: block;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button, input[type="file"] {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #00f0ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0080ff;
+        }
+        input[type="file"] {
+            background: #666;
+        }
+        .info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>カスタムOGP画像作成ツール</h1>
+    
+    <div class="controls">
+        <input type="file" id="imageInput" accept="image/*">
+        <button onclick="resetImage()">リセット</button>
+        <button onclick="downloadImage()">OGP画像をダウンロード</button>
+    </div>
+    
+    <canvas id="canvas" width="1200" height="630"></canvas>
+    
+    <div class="info">
+        <h2>使い方</h2>
+        <ol>
+            <li>「ファイルを選択」から元の画像をアップロード</li>
+            <li>自動的にプロジェクト用のテキストとデザインが追加されます</li>
+            <li>「OGP画像をダウンロード」をクリックして保存</li>
+            <li>保存したファイルを <code>ogp-image.png</code> として使用</li>
+        </ol>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const imageInput = document.getElementById('imageInput');
+        let originalImage = null;
+
+        // デフォルトの描画
+        drawDefault();
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onload = function() {
+                        originalImage = img;
+                        drawWithImage(img);
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function drawDefault() {
+            // 背景
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#16213e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 630);
+
+            // グリッド
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 1200; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, 630);
+                ctx.stroke();
+            }
+            for (let i = 0; i < 630; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(1200, i);
+                ctx.stroke();
+            }
+
+            addTextOverlay();
+        }
+
+        function drawWithImage(img) {
+            // 画像を背景として配置
+            ctx.clearRect(0, 0, 1200, 630);
+            
+            // 画像をカバーするように配置
+            const scale = Math.max(1200 / img.width, 630 / img.height);
+            const scaledWidth = img.width * scale;
+            const scaledHeight = img.height * scale;
+            const x = (1200 - scaledWidth) / 2;
+            const y = (630 - scaledHeight) / 2;
+            
+            ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
+            
+            // 半透明のオーバーレイ
+            const overlay = ctx.createLinearGradient(0, 0, 1200, 630);
+            overlay.addColorStop(0, 'rgba(26, 26, 46, 0.7)');
+            overlay.addColorStop(1, 'rgba(22, 33, 62, 0.7)');
+            ctx.fillStyle = overlay;
+            ctx.fillRect(0, 0, 1200, 630);
+            
+            addTextOverlay();
+        }
+
+        function addTextOverlay() {
+            // テキストエリアの背景
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(50, 150, 600, 330);
+            
+            // ロゴ部分
+            ctx.save();
+            ctx.translate(80, 200);
+            
+            // AIロゴ
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // A
+            ctx.beginPath();
+            ctx.moveTo(0, 50);
+            ctx.lineTo(25, 0);
+            ctx.lineTo(50, 50);
+            ctx.moveTo(10, 35);
+            ctx.lineTo(40, 35);
+            ctx.stroke();
+            
+            // I
+            ctx.beginPath();
+            ctx.moveTo(70, 0);
+            ctx.lineTo(70, 50);
+            ctx.stroke();
+            
+            ctx.restore();
+
+            // タイトル
+            ctx.font = 'bold 48px "Noto Sans JP", sans-serif';
+            ctx.fillStyle = '#00f0ff';
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 20;
+            ctx.fillText('顔面筋緊張', 80, 300);
+            ctx.fillText('自律神経診断AI', 80, 360);
+            ctx.shadowBlur = 0;
+
+            // サブタイトル
+            ctx.font = '24px "Noto Sans JP", sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('MediaPipe Face Meshによる', 80, 410);
+            ctx.fillText('リアルタイム解析システム', 80, 445);
+
+            // 特徴バッジ
+            const features = ['468点解析', '個人最適化', 'AI診断'];
+            features.forEach((feature, index) => {
+                const x = 700 + (index % 2) * 200;
+                const y = 280 + Math.floor(index / 2) * 80;
+                
+                // バッジ背景
+                ctx.fillStyle = 'rgba(0, 240, 255, 0.2)';
+                ctx.fillRect(x, y - 25, 180, 50);
+                
+                // バッジ枠
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y - 25, 180, 50);
+                
+                // テキスト
+                ctx.font = 'bold 20px "Noto Sans JP", sans-serif';
+                ctx.fillStyle = '#00f0ff';
+                ctx.textAlign = 'center';
+                ctx.fillText(feature, x + 90, y + 5);
+                ctx.textAlign = 'left';
+            });
+
+            // 装飾的な要素
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.5)';
+            ctx.lineWidth = 2;
+            
+            // 上部の線
+            ctx.beginPath();
+            ctx.moveTo(50, 100);
+            ctx.lineTo(650, 100);
+            ctx.stroke();
+            
+            // 下部の線
+            ctx.beginPath();
+            ctx.moveTo(50, 530);
+            ctx.lineTo(650, 530);
+            ctx.stroke();
+
+            // グロー効果
+            const glowGradient = ctx.createRadialGradient(900, 315, 0, 900, 315, 200);
+            glowGradient.addColorStop(0, 'rgba(0, 240, 255, 0.3)');
+            glowGradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(700, 115, 400, 400);
+        }
+
+        function resetImage() {
+            originalImage = null;
+            drawDefault();
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'ogp-image.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>

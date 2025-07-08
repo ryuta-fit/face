@@ -868,7 +868,7 @@ class EnhancedAutonomicAnalyzer {
     }
     
     generateDetailedReport() {
-        // 分析レポートの生成
+        // 分析レポートの生成（コンソールに出力のみ）
         const report = {
             timestamp: new Date().toISOString(),
             sessionDuration: this.timeSeriesData.timestamps.length > 0 ? 
@@ -879,10 +879,10 @@ class EnhancedAutonomicAnalyzer {
             summary: this.generateSummary()
         };
         
-        console.log('Detailed Analysis Report:', report);
+        console.log('詳細分析レポート:', report);
         
-        // レポートをダウンロード可能にする
-        this.downloadReport(report);
+        // ブラウザに要約を表示
+        this.displaySummaryInBrowser(report);
     }
     
     calculateAverageMetrics() {
@@ -1027,16 +1027,27 @@ class EnhancedAutonomicAnalyzer {
         return summary;
     }
     
-    downloadReport(report) {
-        const dataStr = JSON.stringify(report, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    displaySummaryInBrowser(report) {
+        // 分析要約をブラウザに表示
+        let summaryDiv = document.getElementById('analysis-summary');
+        if (!summaryDiv) {
+            summaryDiv = document.createElement('div');
+            summaryDiv.id = 'analysis-summary';
+            summaryDiv.className = 'analysis-summary';
+            document.getElementById('results').appendChild(summaryDiv);
+        }
         
-        const exportFileDefaultName = `autonomic_analysis_${new Date().toISOString()}.json`;
+        const duration = Math.round(report.sessionDuration);
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
         
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
+        summaryDiv.innerHTML = `
+            <h3>分析セッションの要約</h3>
+            <div class="summary-content">
+                <p><strong>分析時間:</strong> ${minutes}分${seconds}秒</p>
+                <div class="summary-text">${report.summary}</div>
+            </div>
+        `;
     }
     
     // 基本的なヘルパーメソッド
