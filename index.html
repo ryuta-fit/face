@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顔面筋緊張による自律神経診断</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>自律神経診断システム</h1>
+            <p>顔面の筋緊張から自律神経の状態を分析します</p>
+        </header>
+
+        <main>
+            <div class="video-container">
+                <video id="video" autoplay></video>
+                <canvas id="overlay"></canvas>
+            </div>
+
+            <div class="controls">
+                <button id="startBtn" class="btn btn-primary">診断開始</button>
+                <button id="stopBtn" class="btn btn-secondary" disabled>診断停止</button>
+            </div>
+
+            <div id="results" class="results-container">
+                <h2>診断結果</h2>
+                <div class="result-item">
+                    <label>交感神経優位度:</label>
+                    <div class="progress-bar">
+                        <div id="sympathetic-bar" class="progress-fill sympathetic"></div>
+                    </div>
+                    <span id="sympathetic-value">--%</span>
+                </div>
+                <div class="result-item">
+                    <label>副交感神経優位度:</label>
+                    <div class="progress-bar">
+                        <div id="parasympathetic-bar" class="progress-fill parasympathetic"></div>
+                    </div>
+                    <span id="parasympathetic-value">--%</span>
+                </div>
+                <div class="diagnosis-text">
+                    <h3>診断内容</h3>
+                    <p id="diagnosis-content"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://unpkg.com/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
