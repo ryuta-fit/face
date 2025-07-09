@@ -1,5 +1,11 @@
 # Netlify設定ファイル
 
+# JavaScriptファイルのMIMEタイプを設定
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+
 [[headers]]
   for = "/*"
   [headers.values]
@@ -10,7 +16,6 @@
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
     
     # XSSプロテクション
-    X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
     X-XSS-Protection = "1; mode=block"
     
