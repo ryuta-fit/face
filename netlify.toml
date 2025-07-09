@@ -1,5 +1,19 @@
 # Netlify設定ファイル
 
+# JavaScriptファイルのMIMEタイプを明示的に設定
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Content-Type = "application/javascript; charset=UTF-8"
+    Cache-Control = "public, max-age=3600"
+
+# CSSファイルのMIMEタイプを明示的に設定
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Content-Type = "text/css; charset=UTF-8"
+    Cache-Control = "public, max-age=3600"
+
 [[headers]]
   for = "/*"
   [headers.values]
