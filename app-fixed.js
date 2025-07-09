@@ -59,10 +59,40 @@ class AutonomicNervousSystemAnalyzer {
     
     async startAnalysis() {
         try {
+            // HTTPS環境チェック
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                alert('このアプリケーションはHTTPS環境でのみ動作します。');
+                return;
+            }
+            
             this.startBtn.disabled = true;
             this.stopBtn.disabled = false;
             this.resultsContainer.classList.add('active');
             this.isAnalyzing = true;
+            
+            // カメラアクセスを明示的に要求
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                
+                // ストリームを一旦停止
+                stream.getTracks().forEach(track => track.stop());
+            } catch (err) {
+                console.error('カメラアクセスエラー:', err);
+                if (err.name === 'NotAllowedError') {
+                    alert('カメラへのアクセスが拒否されました。ブラウザの設定でカメラの使用を許可してください。');
+                } else if (err.name === 'NotFoundError') {
+                    alert('カメラが見つかりません。カメラが接続されていることを確認してください。');
+                } else {
+                    alert('カメラの起動に失敗しました: ' + err.message);
+                }
+                this.stopAnalysis();
+                return;
+            }
             
             // カメラの初期化
             this.camera = new Camera(this.video, {
@@ -87,7 +117,7 @@ class AutonomicNervousSystemAnalyzer {
             
         } catch (error) {
             console.error('カメラの起動に失敗:', error);
-            alert('カメラへのアクセスに失敗しました。ブラウザの設定を確認してください。');
+            alert('カメラへのアクセスに失敗しました。\n\n考えられる原因:\n- HTTPSでアクセスしていない\n- カメラの使用が拒否されている\n- 他のアプリがカメラを使用中');
             this.stopAnalysis();
         }
     }

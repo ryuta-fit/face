@@ -1,0 +1,2 @@
+# HTTPからHTTPSへリダイレクト
+http://mujura.netlify.app/* https://mujura.netlify.app/:splat 301!
