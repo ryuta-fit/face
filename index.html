@@ -44,7 +44,6 @@
             <div class="controls">
                 <button id="startBtn" class="btn btn-primary">診断開始</button>
                 <button id="stopBtn" class="btn btn-secondary" disabled>診断停止</button>
-                <div id="calibration-status" class="calibration-status"></div>
             </div>
 
             <div id="results" class="results-container">
@@ -71,9 +70,9 @@
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633005820/face_mesh.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1632432234/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://unpkg.com/@mediapipe/camera_utils/camera_utils.js"></script>
     <!-- 修正版を使用 -->
-    <script type="text/javascript" src="app-fixed.js"></script>
+    <script src="app-fixed.js"></script>
 </body>
 </html>
