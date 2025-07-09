@@ -1,0 +1,34 @@
+# PNG画像のMIMEタイプ設定
+/*.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=604800
+
+# JPEG画像のMIMEタイプ設定
+/*.jpg
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=604800
+
+/*.jpeg
+  Content-Type: image/jpeg
+  Cache-Control: public, max-age=604800
+
+# JavaScript ファイルのMIMEタイプ設定
+/*.js
+  Content-Type: application/javascript
+  Cache-Control: public, max-age=3600
+
+# CSS ファイルのMIMEタイプ設定
+/*.css
+  Content-Type: text/css
+  Cache-Control: public, max-age=3600
+
+# HTML ファイルのMIMEタイプ設定
+/*.html
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=0, must-revalidate
+
+# 全般的なヘッダー設定
+/*
+  Permissions-Policy: camera=(*) microphone=() geolocation=()
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer-when-downgrade
