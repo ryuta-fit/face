@@ -23,7 +23,7 @@ class AutonomicNervousSystemAnalyzer {
         
         // 測定タイマー関連
         this.measurementTimer = null;
-        this.measurementDuration = 5000; // 5秒
+        this.measurementDuration = 7000; // 7秒
         this.measurementData = [];
         this.countdownInterval = null;
         
@@ -76,7 +76,7 @@ class AutonomicNervousSystemAnalyzer {
             this.resultsContainer.classList.add('active');
             this.isAnalyzing = true;
             
-            // 5秒タイマーを開始
+            // 7秒タイマーを開始
             this.startMeasurementTimer();
             
             // カメラアクセスを明示的に要求
@@ -666,7 +666,7 @@ AutonomicNervousSystemAnalyzer.prototype.startMeasurementTimer = function() {
         }
     }, 100);
     
-    // 5秒後に測定終了
+    // 7秒後に測定終了
     this.measurementTimer = setTimeout(() => {
         this.finishMeasurement();
     }, this.measurementDuration);
