@@ -1,0 +1,8 @@
+{
+  "name": "face-analysis",
+  "version": "1.0.0",
+  "description": "Face analysis web app",
+  "scripts": {
+    "build": "echo 'No build needed'"
+  }
+}

@@ -1,5 +1,8 @@
 # Netlify設定ファイル
 
+[build]
+  publish = "."
+
 # JavaScriptファイルのMIMEタイプを明示的に設定
 [[headers]]
   for = "/*.js"
