@@ -1,17 +1,8 @@
 # Netlify設定ファイル
 
-# JavaScriptファイルのMIMEタイプを設定
-[[headers]]
-  for = "*.js"
-  [headers.values]
-    Content-Type = "application/javascript"
-
 [[headers]]
   for = "/*"
   [headers.values]
-    # セキュリティヘッダー
-    Permissions-Policy = "camera=(*), microphone=(), geolocation=()"
-    
     # HTTPSを強制
     Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
     
