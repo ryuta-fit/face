@@ -45,10 +45,12 @@ class AutonomicNervousSystemAnalyzer {
     initializeFaceMesh() {
         // FaceMeshコンストラクタが利用可能になるまで待機
         if (typeof FaceMesh === 'undefined') {
+            console.log('FaceMeshがまだ読み込まれていません...');
             setTimeout(() => this.initializeFaceMesh(), 100);
             return;
         }
         
+        console.log('FaceMeshを初期化中...');
         this.faceMesh = new FaceMesh({
             locateFile: (file) => {
                 return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -71,7 +73,12 @@ class AutonomicNervousSystemAnalyzer {
             const selectedGender = document.querySelector('input[name="gender"]:checked').value;
             if (!this.isCalibrated || (this.calibrationData && this.calibrationData.gender !== selectedGender)) {
                 this.isCalibrated = false;
-                await this.calibrateWithAverageFace();
+                try {
+                    await this.calibrateWithAverageFace();
+                } catch (error) {
+                    console.error('キャリブレーションエラー:', error);
+                    // キャリブレーションに失敗してもアプリは動作させる
+                }
             }
             
             // HTTPS環境チェック
@@ -116,7 +123,11 @@ class AutonomicNervousSystemAnalyzer {
             this.camera = new Camera(this.video, {
                 onFrame: async () => {
                     if (this.isAnalyzing && this.faceMesh) {
-                        await this.faceMesh.send({ image: this.video });
+                        try {
+                            await this.faceMesh.send({ image: this.video });
+                        } catch (error) {
+                            console.error('FaceMeshへの送信エラー:', error);
+                        }
                     }
                 },
                 width: 640,
@@ -150,6 +161,8 @@ class AutonomicNervousSystemAnalyzer {
     }
     
     onFaceMeshResults(results) {
+        console.log('FaceMesh結果受信:', results);
+        
         const ctx = this.overlay.getContext('2d');
         ctx.save();
         ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
@@ -160,6 +173,7 @@ class AutonomicNervousSystemAnalyzer {
         
         if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
             const landmarks = results.multiFaceLandmarks[0];
+            console.log('顔検出成功:', landmarks.length, 'ランドマーク');
             
             // 顔メッシュを描画
             this.drawFaceMesh(ctx, landmarks);
