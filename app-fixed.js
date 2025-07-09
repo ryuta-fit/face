@@ -422,12 +422,12 @@ class AutonomicNervousSystemAnalyzer {
         // 各メトリクスの重み付け
         const weights = {
             sympathetic: {
-                foreheadTension: 0.20,
-                eyebrowTension: 0.15,
-                eyeTension: 0.20,
-                jawTension: 0.25,
+                foreheadTension: 0.15,
+                eyebrowTension: 0.40,
+                eyeTension: 0.15,
+                jawTension: 0.15,
                 asymmetry: 0.10,
-                highBlinkRate: 0.10
+                highBlinkRate: 0.05
             },
             parasympathetic: {
                 relaxedForehead: 0.20,
