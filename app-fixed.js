@@ -419,21 +419,21 @@ class AutonomicNervousSystemAnalyzer {
     }
     
     calculateAutonomicState(metrics) {
-        // 各メトリクスの重み付け
+        // 各メトリクスの重み付け（眉間を0.3、顎を0.1に調整）
         const weights = {
             sympathetic: {
-                foreheadTension: 0.20,
-                eyebrowTension: 0.15,
+                foreheadTension: 0.15,
+                eyebrowTension: 0.30,  // 眉間の重要度を上げる
                 eyeTension: 0.20,
-                jawTension: 0.25,
-                asymmetry: 0.10,
+                jawTension: 0.10,      // 顎の重要度を下げる
+                asymmetry: 0.15,
                 highBlinkRate: 0.10
             },
             parasympathetic: {
                 relaxedForehead: 0.20,
                 relaxedEyes: 0.25,
-                relaxedJaw: 0.25,
-                relaxedCheeks: 0.15,
+                relaxedJaw: 0.10,      // 顎の重要度を下げる
+                relaxedCheeks: 0.30,   // 頬の重要度を上げて調整
                 normalBlinkRate: 0.15
             }
         };
