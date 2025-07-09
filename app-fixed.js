@@ -33,6 +33,7 @@ class AutonomicNervousSystemAnalyzer {
         this.calibrationFrames = 0;
         this.calibrationData = null;
         this.isCalibrated = false;
+        this.skipCalibration = true; // 一時的にキャリブレーションをスキップ
         
         this.setupEventListeners();
         this.initializeFaceMesh();
@@ -71,7 +72,7 @@ class AutonomicNervousSystemAnalyzer {
                         // 一時的にonResultsハンドラを変更
                         const originalOnResults = this.faceMesh.onResults;
                         
-                        this.faceMesh.onResults((results) => {
+                        const calibrationHandler = (results) => {
                             if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
                                 const landmarks = results.multiFaceLandmarks[0];
                                 const metrics = this.analyzeMuscleStates(landmarks);
@@ -88,16 +89,18 @@ class AutonomicNervousSystemAnalyzer {
                                 this.showCalibrationStatus('キャリブレーション完了 (基準値: 交感神経30%, 副交感神経70%)', 'success');
                                 
                                 // 元のハンドラに戻す
-                                this.faceMesh.onResults = originalOnResults;
+                                this.faceMesh.onResults((results) => this.onFaceMeshResults(results));
                                 resolveAnalysis();
                                 resolve(true);
                             } else {
                                 this.showCalibrationStatus('キャリブレーション失敗: 顔を検出できませんでした', 'error');
-                                this.faceMesh.onResults = originalOnResults;
+                                this.faceMesh.onResults((results) => this.onFaceMeshResults(results));
                                 resolveAnalysis();
                                 reject(new Error('平均顔から顔を検出できませんでした'));
                             }
-                        });
+                        };
+                        
+                        this.faceMesh.onResults(calibrationHandler);
                         
                         // 画像を送信
                         this.faceMesh.send({ image: canvas });
@@ -153,14 +156,16 @@ class AutonomicNervousSystemAnalyzer {
     
     async startAnalysis() {
         try {
-            // キャリブレーションが完了していない場合は実行
-            if (!this.isCalibrated) {
+            // キャリブレーションが完了していない場合は実行（一時的にスキップ）
+            if (!this.isCalibrated && !this.skipCalibration) {
                 try {
+                    console.log('キャリブレーション開始...');
                     await this.calibrateWithAverageFace();
                     console.log('キャリブレーション完了');
                 } catch (error) {
                     console.error('キャリブレーションエラー:', error);
                     // キャリブレーションに失敗してもアプリは動作させる
+                    console.log('キャリブレーションをスキップしてアプリを続行します');
                 }
             }
             
