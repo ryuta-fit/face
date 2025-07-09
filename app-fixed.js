@@ -30,6 +30,8 @@ class AutonomicNervousSystemAnalyzer {
         // キャリブレーション
         this.baseline = null;
         this.calibrationFrames = 0;
+        this.calibrationData = null;
+        this.isCalibrated = false;
         
         this.setupEventListeners();
         this.initializeFaceMesh();
@@ -65,6 +67,11 @@ class AutonomicNervousSystemAnalyzer {
     
     async startAnalysis() {
         try {
+            // キャリブレーションが完了していない場合は実行
+            if (!this.isCalibrated) {
+                await this.calibrateWithAverageFace();
+            }
+            
             // HTTPS環境チェック
             if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
                 alert('このアプリケーションはHTTPS環境でのみ動作します。');
@@ -632,6 +639,72 @@ document.addEventListener('DOMContentLoaded', () => {
     tryInit();
 });
 
+// キャリブレーションメソッドを追加
+AutonomicNervousSystemAnalyzer.prototype.calibrateWithAverageFace = async function() {
+    console.log('平均顔でキャリブレーション開始...');
+    
+    // 画像を読み込み
+    const img = new Image();
+    img.src = 'averageface.png';
+    
+    return new Promise((resolve, reject) => {
+        img.onload = async () => {
+            try {
+                // Canvas作成
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                // FaceMeshに画像を送信して結果を待つ
+                await new Promise((resolveAnalysis) => {
+                    const originalOnResults = this.faceMesh.onResults;
+                    
+                    const calibrationHandler = (results) => {
+                        if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
+                            const landmarks = results.multiFaceLandmarks[0];
+                            const metrics = this.analyzeMuscleStates(landmarks);
+                            
+                            // この値を基準値として保存（60点 = 副交感神経70%）
+                            this.calibrationData = {
+                                baselineMetrics: metrics,
+                                targetScore: 60,
+                                targetSympathetic: 30,
+                                targetParasympathetic: 70
+                            };
+                            
+                            this.isCalibrated = true;
+                            console.log('キャリブレーション完了:', this.calibrationData);
+                            
+                            // 元のハンドラに戻す
+                            this.faceMesh.onResults(originalOnResults);
+                            resolveAnalysis();
+                            resolve(true);
+                        } else {
+                            this.faceMesh.onResults(originalOnResults);
+                            resolveAnalysis();
+                            reject(new Error('平均顔から顔を検出できませんでした'));
+                        }
+                    };
+                    
+                    this.faceMesh.onResults(calibrationHandler);
+                    
+                    // 画像を送信
+                    this.faceMesh.send({ image: canvas });
+                });
+            } catch (error) {
+                reject(error);
+            }
+        };
+        
+        img.onerror = () => {
+            console.warn('キャリブレーション画像の読み込みに失敗しました。デフォルト値を使用します。');
+            resolve(false);
+        };
+    });
+};
+
 // 測定タイマー関連のメソッドを追加
 AutonomicNervousSystemAnalyzer.prototype.startMeasurementTimer = function() {
     this.measurementData = [];
@@ -708,8 +781,18 @@ AutonomicNervousSystemAnalyzer.prototype.calculateScore = function() {
     avgSympathetic /= this.measurementData.length;
     avgParasympathetic /= this.measurementData.length;
     
-    // スコアを計算 (副交感神経優位ほど高スコア)
-    let score = Math.round(avgParasympathetic);
+    // キャリブレーションデータがある場合は相対的なスコアを計算
+    let score;
+    if (this.isCalibrated && this.calibrationData) {
+        // 平均顔（60点）を基準にスコアを調整
+        // 副交感神経70%が60点になるように正規化
+        const baselineParasympathetic = this.calibrationData.targetParasympathetic;
+        const normalizedParasympathetic = (avgParasympathetic / baselineParasympathetic) * 60;
+        score = Math.round(Math.min(100, Math.max(0, normalizedParasympathetic)));
+    } else {
+        // キャリブレーションなしの場合は従来通り
+        score = Math.round(avgParasympathetic);
+    }
     
     // メッセージを決定
     let message = '';
