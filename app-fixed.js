@@ -21,6 +21,12 @@ class AutonomicNervousSystemAnalyzer {
             jaw: []
         };
         
+        // 測定タイマー関連
+        this.measurementTimer = null;
+        this.measurementDuration = 5000; // 5秒
+        this.measurementData = [];
+        this.countdownInterval = null;
+        
         // キャリブレーション
         this.baseline = null;
         this.calibrationFrames = 0;
@@ -69,6 +75,9 @@ class AutonomicNervousSystemAnalyzer {
             this.stopBtn.disabled = false;
             this.resultsContainer.classList.add('active');
             this.isAnalyzing = true;
+            
+            // 5秒タイマーを開始
+            this.startMeasurementTimer();
             
             // カメラアクセスを明示的に要求
             try {
@@ -151,6 +160,14 @@ class AutonomicNervousSystemAnalyzer {
             
             // 自律神経状態を計算
             const autonomicState = this.calculateAutonomicState(muscleMetrics);
+            
+            // 測定中はデータを蓄積
+            if (this.measurementTimer && autonomicState.sympathetic && autonomicState.parasympathetic) {
+                this.measurementData.push({
+                    sympathetic: autonomicState.sympathetic,
+                    parasympathetic: autonomicState.parasympathetic
+                });
+            }
             
             // UIを更新
             this.updateUI(autonomicState);
@@ -614,3 +631,148 @@ document.addEventListener('DOMContentLoaded', () => {
     
     tryInit();
 });
+
+// 測定タイマー関連のメソッドを追加
+AutonomicNervousSystemAnalyzer.prototype.startMeasurementTimer = function() {
+    this.measurementData = [];
+    const startTime = Date.now();
+    
+    // カウントダウン表示を作成
+    const countdown = document.createElement('div');
+    countdown.id = 'countdown-timer';
+    countdown.style.cssText = `
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 48px;
+        font-weight: bold;
+        color: #fff;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        z-index: 1000;
+    `;
+    document.querySelector('.video-container').appendChild(countdown);
+    
+    // カウントダウン更新
+    this.countdownInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const remaining = Math.max(0, this.measurementDuration - elapsed);
+        const seconds = Math.ceil(remaining / 1000);
+        
+        if (seconds > 0) {
+            countdown.textContent = `測定中: ${seconds}秒`;
+        } else {
+            countdown.textContent = '測定完了！';
+        }
+    }, 100);
+    
+    // 5秒後に測定終了
+    this.measurementTimer = setTimeout(() => {
+        this.finishMeasurement();
+    }, this.measurementDuration);
+};
+
+AutonomicNervousSystemAnalyzer.prototype.finishMeasurement = function() {
+    clearInterval(this.countdownInterval);
+    this.measurementTimer = null;
+    
+    // スコアを計算
+    const score = this.calculateScore();
+    
+    // 結果を表示
+    this.displayFinalScore(score);
+    
+    // 測定を停止
+    this.stopAnalysis();
+};
+
+AutonomicNervousSystemAnalyzer.prototype.calculateScore = function() {
+    if (this.measurementData.length === 0) {
+        return { 
+            score: 0, 
+            sympathetic: 0,
+            parasympathetic: 0,
+            message: 'データが不十分です' 
+        };
+    }
+    
+    // 測定データの平均を計算
+    let avgSympathetic = 0;
+    let avgParasympathetic = 0;
+    
+    this.measurementData.forEach(data => {
+        avgSympathetic += data.sympathetic;
+        avgParasympathetic += data.parasympathetic;
+    });
+    
+    avgSympathetic /= this.measurementData.length;
+    avgParasympathetic /= this.measurementData.length;
+    
+    // スコアを計算 (副交感神経優位ほど高スコア)
+    let score = Math.round(avgParasympathetic);
+    
+    // メッセージを決定
+    let message = '';
+    if (score >= 80) {
+        message = '素晴らしい！非常にリラックスしています';
+    } else if (score >= 65) {
+        message = '良好！バランスの取れた状態です';
+    } else if (score >= 50) {
+        message = '普通。少しリラックスを心がけましょう';
+    } else if (score >= 35) {
+        message = '緊張気味。深呼吸をしてみましょう';
+    } else {
+        message = 'ストレス状態。休息が必要です';
+    }
+    
+    return {
+        score: score,
+        sympathetic: Math.round(avgSympathetic),
+        parasympathetic: Math.round(avgParasympathetic),
+        message: message
+    };
+};
+
+AutonomicNervousSystemAnalyzer.prototype.displayFinalScore = function(scoreData) {
+    // 既存のカウントダウンを削除
+    const countdown = document.getElementById('countdown-timer');
+    if (countdown) countdown.remove();
+    
+    // スコア表示用の要素を作成
+    const scoreDisplay = document.createElement('div');
+    scoreDisplay.id = 'final-score';
+    scoreDisplay.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        z-index: 2000;
+        min-width: 400px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    `;
+    
+    scoreDisplay.innerHTML = `
+        <h2 style="margin-bottom: 20px; font-size: 32px;">測定結果</h2>
+        <div style="font-size: 72px; font-weight: bold; color: #4CAF50; margin: 20px 0;">
+            ${scoreData.score}<span style="font-size: 36px;">点</span>
+        </div>
+        <p style="font-size: 24px; margin: 20px 0;">${scoreData.message}</p>
+        <div style="margin: 20px 0; font-size: 18px;">
+            <div>交感神経: ${scoreData.sympathetic}%</div>
+            <div>副交感神経: ${scoreData.parasympathetic}%</div>
+        </div>
+        <button onclick="document.getElementById('final-score').remove();" 
+                style="margin-top: 20px; padding: 10px 30px; font-size: 18px; 
+                       background: #4CAF50; color: white; border: none; 
+                       border-radius: 5px; cursor: pointer;">
+            閉じる
+        </button>
+    `;
+    
+    document.body.appendChild(scoreDisplay);
+};
