@@ -67,8 +67,10 @@ class AutonomicNervousSystemAnalyzer {
     
     async startAnalysis() {
         try {
-            // キャリブレーションが完了していない場合は実行
-            if (!this.isCalibrated) {
+            // 性別が変更された場合は再キャリブレーション
+            const selectedGender = document.querySelector('input[name="gender"]:checked').value;
+            if (!this.isCalibrated || (this.calibrationData && this.calibrationData.gender !== selectedGender)) {
+                this.isCalibrated = false;
                 await this.calibrateWithAverageFace();
             }
             
@@ -643,9 +645,15 @@ document.addEventListener('DOMContentLoaded', () => {
 AutonomicNervousSystemAnalyzer.prototype.calibrateWithAverageFace = async function() {
     console.log('平均顔でキャリブレーション開始...');
     
+    // 選択された性別を取得
+    const selectedGender = document.querySelector('input[name="gender"]:checked').value;
+    const imagePath = selectedGender === 'male' ? 'mon.jpeg' : 'womon.jpeg';
+    
+    console.log(`使用する平均顔: ${imagePath}`);
+    
     // 画像を読み込み
     const img = new Image();
-    img.src = 'averageface.png';
+    img.src = imagePath;
     
     return new Promise((resolve, reject) => {
         img.onload = async () => {
@@ -671,7 +679,8 @@ AutonomicNervousSystemAnalyzer.prototype.calibrateWithAverageFace = async functi
                                 baselineMetrics: metrics,
                                 targetScore: 60,
                                 targetSympathetic: 30,
-                                targetParasympathetic: 70
+                                targetParasympathetic: 70,
+                                gender: selectedGender
                             };
                             
                             this.isCalibrated = true;
