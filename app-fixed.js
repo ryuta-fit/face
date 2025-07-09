@@ -49,7 +49,7 @@ class AutonomicNervousSystemAnalyzer {
         
         // 画像を読み込み
         const img = new Image();
-        img.src = 'averageface.webp';
+        img.src = 'averageface.png';
         
         return new Promise((resolve, reject) => {
             img.onload = async () => {
@@ -261,8 +261,11 @@ class AutonomicNervousSystemAnalyzer {
             const autonomicState = this.calculateAutonomicState(muscleMetrics);
             
             // 測定中はデータを蓄積
-            if (this.measurementTimer) {
-                this.measurementData.push(autonomicState);
+            if (this.measurementTimer && autonomicState.sympathetic && autonomicState.parasympathetic) {
+                this.measurementData.push({
+                    sympathetic: autonomicState.sympathetic,
+                    parasympathetic: autonomicState.parasympathetic
+                });
             }
             
             // UIを更新
@@ -870,20 +873,38 @@ AutonomicNervousSystemAnalyzer.prototype.finishMeasurement = function() {
 
 AutonomicNervousSystemAnalyzer.prototype.calculateScore = function() {
     if (this.measurementData.length === 0) {
-        return { score: 0, message: 'データが不十分です' };
+        return { 
+            score: 0, 
+            sympathetic: 0,
+            parasympathetic: 0,
+            message: 'データが不十分です' 
+        };
     }
     
     // 測定データの平均を計算
     let avgSympathetic = 0;
     let avgParasympathetic = 0;
+    let validDataCount = 0;
     
     this.measurementData.forEach(data => {
-        avgSympathetic += data.sympathetic;
-        avgParasympathetic += data.parasympathetic;
+        if (data.sympathetic !== undefined && data.parasympathetic !== undefined) {
+            avgSympathetic += data.sympathetic;
+            avgParasympathetic += data.parasympathetic;
+            validDataCount++;
+        }
     });
     
-    avgSympathetic /= this.measurementData.length;
-    avgParasympathetic /= this.measurementData.length;
+    if (validDataCount === 0) {
+        return { 
+            score: 0, 
+            sympathetic: 0,
+            parasympathetic: 0,
+            message: 'データが不十分です' 
+        };
+    }
+    
+    avgSympathetic /= validDataCount;
+    avgParasympathetic /= validDataCount;
     
     // スコアを計算 (副交感神経優位ほど高スコア)
     let score = Math.round(avgParasympathetic);
