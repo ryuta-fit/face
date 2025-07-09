@@ -69,7 +69,8 @@ class EnhancedAutonomicAnalyzer {
     }
     
     initializeFaceMesh() {
-        this.faceMesh = new FaceMesh({
+        // FaceMeshを正しく初期化
+        this.faceMesh = new window.FaceMesh({
             locateFile: (file) => {
                 return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
             }
