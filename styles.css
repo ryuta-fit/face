@@ -56,12 +56,15 @@ main {
     background-color: #000;
     border-radius: 8px;
     overflow: hidden;
+    /* アスペクト比を維持 */
+    aspect-ratio: 4 / 3;
 }
 
 #video {
     width: 100%;
-    height: auto;
+    height: 100%;
     display: block;
+    object-fit: cover;
 }
 
 #overlay {
@@ -71,6 +74,8 @@ main {
     width: 100%;
     height: 100%;
     pointer-events: none;
+    /* モバイルでの描画を確実にする */
+    z-index: 10;
 }
 
 .controls {
@@ -223,8 +228,32 @@ main {
         padding: 10px;
     }
     
+    .service-name {
+        font-size: 2.5rem;
+    }
+    
     header h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
+    }
+    
+    header p {
+        font-size: 0.95rem;
+    }
+    
+    main {
+        padding: 20px;
+    }
+    
+    .video-container {
+        /* モバイルでは正方形に近いアスペクト比 */
+        aspect-ratio: 1 / 1;
+        max-width: 100%;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        margin: 5px;
     }
     
     .result-item {
@@ -233,7 +262,21 @@ main {
         gap: 8px;
     }
     
+    .result-item label {
+        min-width: auto;
+        font-size: 0.9rem;
+    }
+    
     .progress-bar {
         width: 100%;
+        height: 20px;
+    }
+    
+    .diagnosis-text {
+        padding: 15px;
+    }
+    
+    #diagnosis-content {
+        font-size: 0.9rem;
     }
 }

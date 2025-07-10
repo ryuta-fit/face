@@ -135,7 +135,7 @@ class AutonomicNervousSystemAnalyzer {
                 return;
             }
             
-            // カメラの初期化
+            // カメラの初期化（モバイル対応）
             const Camera = window.Camera;
             this.camera = new Camera(this.video, {
                 onFrame: async () => {
@@ -147,11 +147,21 @@ class AutonomicNervousSystemAnalyzer {
                         }
                     }
                 },
-                width: 640,
-                height: 480
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: 'user'  // フロントカメラを使用
             });
             
             await this.camera.start();
+            
+            // ビデオのメタデータ読み込みを待つ（モバイル対応）
+            await new Promise((resolve) => {
+                if (this.video.readyState >= 2) {
+                    resolve();
+                } else {
+                    this.video.addEventListener('loadedmetadata', resolve, { once: true });
+                }
+            });
             
             // 初期値を設定
             this.updateUI({
@@ -181,12 +191,17 @@ class AutonomicNervousSystemAnalyzer {
         console.log('FaceMesh結果受信:', results);
         
         const ctx = this.overlay.getContext('2d');
+        
+        // キャンバスサイズを調整（モバイル対応）
+        if (this.overlay.width !== this.video.videoWidth || 
+            this.overlay.height !== this.video.videoHeight) {
+            this.overlay.width = this.video.videoWidth;
+            this.overlay.height = this.video.videoHeight;
+            console.log('Canvas size updated:', this.overlay.width, 'x', this.overlay.height);
+        }
+        
         ctx.save();
         ctx.clearRect(0, 0, this.overlay.width, this.overlay.height);
-        
-        // キャンバスサイズを調整
-        this.overlay.width = this.video.videoWidth;
-        this.overlay.height = this.video.videoHeight;
         
         if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
             const landmarks = results.multiFaceLandmarks[0];
@@ -236,9 +251,9 @@ class AutonomicNervousSystemAnalyzer {
                           {color: '#C0C0C070', lineWidth: 1});
         } else {
             console.log('drawConnectors not available, drawing manually');
-            // 手動でメッシュを描画
+            // 手動でメッシュを描画（モバイル対応）
             ctx.strokeStyle = '#00FF00';
-            ctx.lineWidth = 0.5;
+            ctx.lineWidth = 1;  // モバイルでは線を太くする
             ctx.globalAlpha = 0.3;
             
             // 簡易的な接続を描画（顔の輪郭のみ）
