@@ -261,13 +261,13 @@ class AutonomicNervousSystemAnalyzer {
         }
         
         // ランドマークポイントを描画
-        ctx.fillStyle = '#FF0000';
+        ctx.fillStyle = '#FFFFFF';  // 白色に変更
         for (const landmark of landmarks) {
             ctx.beginPath();
             ctx.arc(
                 landmark.x * this.overlay.width,
                 landmark.y * this.overlay.height,
-                2, 0, 2 * Math.PI
+                1, 0, 2 * Math.PI  // サイズを2から1に変更
             );
             ctx.fill();
         }
