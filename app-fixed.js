@@ -44,42 +44,58 @@ class AutonomicNervousSystemAnalyzer {
     
     initializeFaceMesh() {
         // FaceMeshコンストラクタが利用可能になるまで待機
-        if (typeof FaceMesh === 'undefined') {
+        if (typeof window.FaceMesh === 'undefined') {
             console.log('FaceMeshがまだ読み込まれていません...');
             setTimeout(() => this.initializeFaceMesh(), 100);
             return;
         }
         
         console.log('FaceMeshを初期化中...');
-        this.faceMesh = new FaceMesh({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-            }
-        });
-        
-        this.faceMesh.setOptions({
-            maxNumFaces: 1,
-            refineLandmarks: true,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
-        
-        this.faceMesh.onResults((results) => this.onFaceMeshResults(results));
+        try {
+            // MediaPipeのFaceMeshを初期化
+            const FaceMesh = window.FaceMesh;
+            this.faceMesh = new FaceMesh({
+                locateFile: (file) => {
+                    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                }
+            });
+            
+            this.faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            
+            this.faceMesh.onResults((results) => {
+                try {
+                    this.onFaceMeshResults(results);
+                } catch (error) {
+                    console.error('FaceMesh結果処理エラー:', error);
+                }
+            });
+            
+            console.log('FaceMesh初期化完了');
+        } catch (error) {
+            console.error('FaceMesh初期化エラー:', error);
+            // エラーが発生した場合は再試行
+            setTimeout(() => this.initializeFaceMesh(), 500);
+        }
     }
     
     async startAnalysis() {
         try {
-            // 性別が変更された場合は再キャリブレーション
-            const selectedGender = document.querySelector('input[name="gender"]:checked').value;
-            if (!this.isCalibrated || (this.calibrationData && this.calibrationData.gender !== selectedGender)) {
-                this.isCalibrated = false;
-                try {
-                    await this.calibrateWithAverageFace();
-                } catch (error) {
-                    console.error('キャリブレーションエラー:', error);
-                    // キャリブレーションに失敗してもアプリは動作させる
-                }
-            }
+            // キャリブレーション機能を一時的に無効化
+            // const selectedGender = document.querySelector('input[name="gender"]:checked').value;
+            // if (!this.isCalibrated || (this.calibrationData && this.calibrationData.gender !== selectedGender)) {
+            //     this.isCalibrated = false;
+            //     try {
+            //         await this.calibrateWithAverageFace();
+            //     } catch (error) {
+            //         console.error('キャリブレーションエラー:', error);
+            //         // キャリブレーションに失敗してもアプリは動作させる
+            //     }
+            // }
             
             // HTTPS環境チェック
             if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
@@ -120,6 +136,7 @@ class AutonomicNervousSystemAnalyzer {
             }
             
             // カメラの初期化
+            const Camera = window.Camera;
             this.camera = new Camera(this.video, {
                 onFrame: async () => {
                     if (this.isAnalyzing && this.faceMesh) {
@@ -209,22 +226,38 @@ class AutonomicNervousSystemAnalyzer {
     }
     
     drawFaceMesh(ctx, landmarks) {
-        // メッシュの描画
-        ctx.strokeStyle = '#00FF00';
-        ctx.lineWidth = 1;
+        console.log('Drawing face mesh with', landmarks.length, 'landmarks');
         
-        // FACEMESH_TESSSELATIONが定義されていない場合の対処
-        if (typeof FACEMESH_TESSELATION !== 'undefined') {
-            const connections = FACEMESH_TESSELATION;
-            for (const connection of connections) {
-                const start = landmarks[connection[0]];
-                const end = landmarks[connection[1]];
-                
-                ctx.beginPath();
-                ctx.moveTo(start.x * this.overlay.width, start.y * this.overlay.height);
-                ctx.lineTo(end.x * this.overlay.width, end.y * this.overlay.height);
-                ctx.stroke();
+        // drawConnectorsを使用するかどうかをチェック
+        if (typeof window.drawConnectors !== 'undefined' && typeof window.FACEMESH_TESSELATION !== 'undefined') {
+            console.log('Using drawConnectors for mesh');
+            // MediaPipeのdrawConnectorsを使用
+            window.drawConnectors(ctx, landmarks, window.FACEMESH_TESSELATION, 
+                          {color: '#C0C0C070', lineWidth: 1});
+        } else {
+            console.log('drawConnectors not available, drawing manually');
+            // 手動でメッシュを描画
+            ctx.strokeStyle = '#00FF00';
+            ctx.lineWidth = 0.5;
+            ctx.globalAlpha = 0.3;
+            
+            // 簡易的な接続を描画（顔の輪郭のみ）
+            const faceContour = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 340, 346, 347, 348, 349, 350, 451, 452, 453, 464, 435, 410, 287, 273, 335, 406, 313, 18, 17, 16, 15, 14, 13, 12, 11, 10];
+            
+            ctx.beginPath();
+            for (let i = 0; i < faceContour.length - 1; i++) {
+                if (landmarks[faceContour[i]] && landmarks[faceContour[i + 1]]) {
+                    const start = landmarks[faceContour[i]];
+                    const end = landmarks[faceContour[i + 1]];
+                    
+                    if (i === 0) {
+                        ctx.moveTo(start.x * this.overlay.width, start.y * this.overlay.height);
+                    }
+                    ctx.lineTo(end.x * this.overlay.width, end.y * this.overlay.height);
+                }
             }
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
         }
         
         // ランドマークポイントを描画
@@ -640,8 +673,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function tryInit() {
         initAttempts++;
         
-        if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+        // 必要なライブラリがすべて読み込まれているか確認
+        const librariesLoaded = 
+            typeof window.FaceMesh !== 'undefined' && 
+            typeof window.Camera !== 'undefined';
+        
+        if (librariesLoaded) {
             console.log('ライブラリの読み込みが完了しました');
+            console.log('Available libraries:', {
+                FaceMesh: typeof window.FaceMesh !== 'undefined',
+                Camera: typeof window.Camera !== 'undefined',
+                drawConnectors: typeof window.drawConnectors !== 'undefined',
+                FACEMESH_TESSELATION: typeof window.FACEMESH_TESSELATION !== 'undefined'
+            });
             new AutonomicNervousSystemAnalyzer();
         } else if (initAttempts < maxAttempts) {
             console.log(`ライブラリを読み込み中... (${initAttempts}/${maxAttempts})`);
@@ -681,7 +725,8 @@ AutonomicNervousSystemAnalyzer.prototype.calibrateWithAverageFace = async functi
                 
                 // FaceMeshに画像を送信して結果を待つ
                 await new Promise((resolveAnalysis) => {
-                    const originalOnResults = this.faceMesh.onResults;
+                    // 元のハンドラを保存（onResultsに渡した関数を保存）
+                    const originalHandler = (results) => this.onFaceMeshResults(results);
                     
                     const calibrationHandler = (results) => {
                         if (results.multiFaceLandmarks && results.multiFaceLandmarks[0]) {
@@ -701,11 +746,11 @@ AutonomicNervousSystemAnalyzer.prototype.calibrateWithAverageFace = async functi
                             console.log('キャリブレーション完了:', this.calibrationData);
                             
                             // 元のハンドラに戻す
-                            this.faceMesh.onResults(originalOnResults);
+                            this.faceMesh.onResults(originalHandler);
                             resolveAnalysis();
                             resolve(true);
                         } else {
-                            this.faceMesh.onResults(originalOnResults);
+                            this.faceMesh.onResults(originalHandler);
                             resolveAnalysis();
                             reject(new Error('平均顔から顔を検出できませんでした'));
                         }
